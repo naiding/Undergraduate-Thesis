@@ -5,8 +5,7 @@ import numpy as np
 import tensorflow as tf
 import time
 
-VGG_MEAN = [123.68, 116.779, 103.939]
-
+VGG_MEAN = [103.939, 116.779, 123.68]
 
 class Vgg16:
     def __init__(self, vgg16_npy_path=None):
@@ -20,7 +19,7 @@ class Vgg16:
         self.data_dict = np.load(vgg16_npy_path, encoding='latin1').item()
         print("npy file loaded")
 
-    def build(self, rgb):
+    def build(self, rgb, keep_prob):
         """
         load variable from npy to build the VGG
 
@@ -38,9 +37,9 @@ class Vgg16:
         assert blue.get_shape().as_list()[1:] == [224, 224, 1]
 
         bgr = tf.concat([
-            red - VGG_MEAN[0],
+            blue - VGG_MEAN[0],
             green - VGG_MEAN[1],
-            blue - VGG_MEAN[2]], 3
+            red - VGG_MEAN[2]], 3
         )
         assert bgr.get_shape().as_list()[1:] == [224, 224, 3]
 
@@ -70,12 +69,14 @@ class Vgg16:
         self.fc6 = self.fc_layer(self.pool5, "fc6")
         assert self.fc6.get_shape().as_list()[1:] == [4096]
         self.relu6 = tf.nn.relu(self.fc6)
+        self.fc6_drop = tf.nn.dropout(self.relu6, keep_prob, name="fc6_drop")
 
-        self.fc7 = self.fc_layer(self.relu6, "fc7")
+        self.fc7 = self.fc_layer(self.fc6_drop, "fc7")
         self.relu7 = tf.nn.relu(self.fc7)
+        self.fc7_drop = tf.nn.dropout(self.relu7, keep_prob, name="fc7_drop")
 
-        self.fc8 = self.fc_layer(self.relu7, "fc8")
 
+        self.fc8 = self.fc_layer(self.fc7_drop, "fc8")
         self.prob = tf.nn.softmax(self.fc8, name="prob")
 
         self.data_dict = None

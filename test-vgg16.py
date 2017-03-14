@@ -4,8 +4,8 @@ import tensorflow as tf
 import vgg16
 import utils
 
-img1 = utils.load_image("./test_data/tiger.jpeg")
-img2 = utils.load_image("./test_data/puzzle.jpeg")
+img1 = utils.load_image("./test_data/puzzle.jpeg")
+img2 = utils.load_image("./test_data/tiger.jpeg")
 
 batch1 = img1.reshape((1, 224, 224, 3))
 batch2 = img2.reshape((1, 224, 224, 3))
@@ -16,11 +16,12 @@ with tf.Session(
         config=tf.ConfigProto(gpu_options=(tf.GPUOptions(per_process_gpu_memory_fraction=0.7)))) as sess:
 
     images = tf.placeholder("float", [2, 224, 224, 3])
-    feed_dict = {images: batch}
+    keep_prob = tf.placeholder(tf.float32)
+    feed_dict = {images: batch, keep_prob: 0.6}
 
     vgg = vgg16.Vgg16('/Users/Naiding/TensorFlow/VGG16-pretrained-model/vgg16.npy')
     with tf.name_scope("content_vgg"):
-        vgg.build(images)
+        vgg.build(images, keep_prob)
 
     prob = sess.run(vgg.prob, feed_dict=feed_dict)
     print(prob)
